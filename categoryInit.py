@@ -35,7 +35,13 @@ class steam_init(object):
         result = re.findall(com, response.text)[0]
         result = re.sub(r',','',result)
         max_page = int( int( result ) / 15 ) + 1
-        page_num = 2
+        if self.announce == 'TopSellers':
+            if max_page < 1000:
+                page_num = max_page
+            else:
+                page_num = 1000
+        else:
+            page_num = 2
         return int(page_num)
 
 class steam_spider_request():
@@ -99,7 +105,7 @@ class steam_spider_request():
                           columns=['链接', 'ID'])
         return df
 
-def getCatagories():
+def get_catagories():
     unique_tags = ['免费游玩', '试玩', '抢先体验', '支持控制器', '远程畅玩', '软件', '原声音轨', '虚拟现实', 'VR 硬件', 'Steam Deck', 'macOS',
                    'SteamOS + Linux', '网吧游戏']
     url = 'https://store.steampowered.com'
@@ -134,32 +140,35 @@ if __name__ == '__main__':
     path = 'init data'
     if not os.path.exists(path):
         os.makedirs(path)
-    announces = ['新品与热门商品', '热销商品', '热门游戏', '最受好评', '即将发行']
-    catagories = getCatagories()
+    announces = ['热销商品', '热门游戏', '最受好评']
+    announce = ''
+    catagories = get_catagories()
     print(catagories)
-    num = ['NewReleases','TopSellers','ConcurrentUsers','TopRated','ComingSoon']
+    num = ['TopSellers','ConcurrentUsers','TopRated']
     for catagory in catagories:
         name = catagory['name']
         print(name)
         try:
-            for i in range(0,5):
-                anouce = announces[i]
-                print(anouce)
+            for i in range(0,3):
+                annouce = announces[i]
+                print(annouce)
                 game_type = name
                 game_type = urllib.parse.quote(game_type)
                 game_anno = i
                 #获取最大页数，返回想要爬取的页数0
                 steam = steam_init(catagory['link'], num[game_anno])
                 page = steam.get_page()
-                spider = steam_spider_request(game_type, num[game_anno - 1], page)
+                spider = steam_spider_request(game_type, num[game_anno], page)
                 # spider.get_spider(page)
                 save = spider.save()
                 path1 = path + '/' + name
                 if not os.path.exists(path1):
                     os.makedirs(path1)
-                path2 = path1 + '/' + name + '_' + anouce + 'links.xlsx'
+                path2 = path1 + '/' + name + '_' + annouce + 'links.xls'
                 file = open(path2, 'wb')
                 file.close()
                 save.to_excel(path2)
-        except IndexError:
-            print(name + "有误")
+        except:
+            print(name + " 有误!!")
+
+
